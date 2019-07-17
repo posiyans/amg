@@ -17,6 +17,7 @@ class CreateMessagesTable extends Migration
             $table->bigIncrements('id');
             $table->integer('user_id');
             $table->integer('ticket_id');
+            $table->text('text');
             $table->timestamps();
         });
     }

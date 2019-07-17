@@ -27,10 +27,17 @@
                     </ul>
                 </div>
                 <div class="card-body">
+                    <div class="card-header">Заявки:</div>
                     <ul class="navbar-nav ml-auto">
-                        @foreach($patient->patien_tickets as  $ticket)
+                        @foreach($patient->patient_tickets as  $ticket)
                             <li class="nav-item">
-                                Заявка: {{ $ticket->specialty_id }}
+                                {{ $ticket->created_at }} {{ $ticket->specialty->name }}
+                                @if($ticket->doctor_id == null and $ticket->specialty_id == Auth::user()->specialty_id)
+                                    <a href="">Начать чат</a>
+                                @endif
+                                @if($ticket->doctor_id == Auth::id())
+                                    <a href="">Продолжить чат</a>
+                                @endif
                             </li>
                         @endforeach
                     </ul>

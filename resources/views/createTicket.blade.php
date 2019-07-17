@@ -13,6 +13,7 @@
                             <div class="col-md-6">
                                 <label>Выберити специализацию</label>
                                 <select class="form-control" name="specialty_id" >
+                                    <option value="" selected disabled>Выбрать специализацию</option>
                                     @foreach($specialtys as $specialty)
                                         <option value="{{ $specialty->id }}">{{ $specialty->name }}</option>
                                     @endforeach

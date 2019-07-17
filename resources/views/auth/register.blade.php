@@ -87,11 +87,12 @@
                             </div>
                         </div>
                         <div class="form-group row" id='specialty' style="display: none">
-                            <label for="name" class="col-md-4 col-form-label text-md-right">Специальность</label>
+                            <label for="name" class="col-md-4 col-form-label text-md-right">Специализация</label>
 
                             <div class="col-md-6">
 
                                 <select class="form-control" name="specialty_id" >
+                                    <option value="">Выбрать специализацию</option>
                                     @foreach($specialtys as $specialty)
                                       <option value="{{ $specialty->id }}">{{ $specialty->name }}</option>
                                     @endforeach
