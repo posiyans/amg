@@ -34,6 +34,9 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/chat/{id}', 'UserController@chat')->name('chat');
 
     Route::get('/ws/check-auth', 'UserController@checkAuth');
+    Route::get('/ws/status-online', 'UserController@setOnlineStatusUser');
+    Route::get('/ws/status-offline', 'UserController@setOfflineStatusUser');
+
     Route::get('/ws/check-sub/{id}', 'UserController@checkSub');
 
 

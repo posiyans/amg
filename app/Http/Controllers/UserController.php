@@ -16,6 +16,10 @@ class UserController extends Controller
     //
 
 
+    /**
+     * вывод списка пациентов
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector|\Illuminate\View\View
+     */
     public function patientList()
     {
         $user = Auth::user();
@@ -29,6 +33,10 @@ class UserController extends Controller
 
     }
 
+    /**
+     * вывод списка врачей
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
     public function doctorList()
     {
         $user = Auth::user();
@@ -43,10 +51,15 @@ class UserController extends Controller
         return view('doctorList', $data);
     }
 
+    /**
+     * вывод профиля пациента
+     * @param $id
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector|\Illuminate\View\View
+     */
     public function patientProfile($id)
     {
         $user = Auth::user();
-        if ($user->role == 2) {
+        if ($user->isDoctor()) {
             $data = [];
             $patient = User::findOrFail($id);
             $data['patient'] = $patient;
@@ -55,12 +68,16 @@ class UserController extends Controller
         return redirect('home');
     }
 
+    /**
+     * вывод профиля врача
+     * @param $id
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector|\Illuminate\View\View
+     */
     public function doctorProfile($id)
     {
         $user = Auth::user();
         $data = [];
         $doctor = $user->getProfile($id);
-        //dd($doctor);
         if ($doctor) {
             $data['user'] = $doctor;
             return view('doctorProfile', $data);
@@ -68,10 +85,14 @@ class UserController extends Controller
         return redirect('home');
     }
 
+    /**
+     * создать задачу
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector|\Illuminate\View\View
+     */
     public function createTicket()
     {
         $user = Auth::user();
-        if ($user->role == 1) {
+        if ($user->isPatient()) {
             $data = [];
             $specialtys = Specialty::all();
             $data['specialtys'] = $specialtys;
@@ -81,29 +102,36 @@ class UserController extends Controller
     }
 
 
+    /**
+     * сохрание задачи
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+     */
     public function saveTicket(Request $request)
     {
         $user = Auth::user();
-        if ($user->role == 1 and $request->has('specialty_id')) {
+        if ($user->isPatient() and $request->has('specialty_id')) {
             $ticket = new Ticket();
             $ticket->specialty_id = (int)$request->input('specialty_id');
             $ticket->patient_id = $user->id;
             $ticket->rom_token = Str::random(32);
             $ticket->save();
-            return redirect('home');
+            return redirect(route('ticketList'));
         }
         return redirect('home');
     }
 
 
+    /**
+     * вывод списка заявок
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
     public function ticketList()
     {
         $user = Auth::user();
         $data = [];
         $ticketList = $user->getOpenTicket();
         $data['ticketList'] = $ticketList;
-        //$l = $user->patient_tickets;
-        //dump($user->hasMany('App\Ticket', 'patient_id', 'id'));
         if ($user->isPatient()) {
             return view('ticketListPatient', $data);
         }
@@ -119,7 +147,7 @@ class UserController extends Controller
      */
     public function checkAuth()
     {
-        return response()->json(['auth' => \Auth::check()]);
+        return response()->json(['auth' => \Auth::check(), 'user_id' => \Auth::user()->id]);
     }
 
     /**
@@ -129,10 +157,24 @@ class UserController extends Controller
      */
     public function checkSub($chanell)
     {
-        return true;
+        $user = Auth::user();
+        if ($chanell == 'laravel_database_new-message-user.'.$user->id.':userMessage'){
+            return response()->json(['auth' => \Auth::check(), 'c'=>$chanell, 'access'=>True]);
+        }
+        $chanell = str_replace('laravel_database_new-message-chat.','',$chanell);
+        $chanell = str_replace(':userMessage','',$chanell);
+        $ticket = Ticket::findOrFail((int)$chanell)->checkAccess();
+        if ($ticket){
+            $access = true;
+        }
+        return response()->json(['auth' => \Auth::check(), 'c'=>$chanell, 'access'=>$access]);
     }
 
 
+    /**
+     * Вывод списка чатов
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
     public function chatsList()
     {
         $data = [];
@@ -142,59 +184,86 @@ class UserController extends Controller
         return view('chatsList', $data);
     }
 
+    /**
+     * окно чата
+     * @param $id
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
     public function chat($id)
     {
         $data = [];
         $user = Auth::user();
-        $chat = Ticket::find($id);
+        $chat = Ticket::findOrFail($id);
         if ($chat->doctor_id == null) {
             $chat->doctor_id = $user->id;
             $chat->save();
         }
         $data['chat'] = $chat;
         return view('chat', $data);
-//        $data = [];
-//        $user = Auth::user();
-//        $chatsList = $user->getInWorkTicket();
-//        $data['chatsList'] = $chatsList;
-//        return view('chatsList', $data);
     }
 
 
+    /**
+     * получение сообщение и рассылка его
+     * @param Request $request
+     */
     public function sendMessage(Request $request)
     {
         $user = Auth::user();
         $this->validatorMessage($request->all())->validate();
-        $messge = Message::create([
-            'text'=>$request->input('message'),
-            'user_id'=>$user->id,
-            'ticket_id'=>$request->input('room_id')
+        $message = Message::create([
+            'text' => $request->input('message'),
+            'user_id' => $user->id,
+            'ticket_id' => $request->input('room_id')
         ]);
-        event(new \App\Events\NewMessage($messge));
-        dump($messge);
-        dump($request);
+        $message->collocutor();
+        event(new \App\Events\NewMessage($message));
     }
 
 
+    /**
+     * @param array $data
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
     protected function validatorMessage(array $data)
     {
         return Validator::make($data, [
             'message' => ['required', 'string'],
             'room_id' => ['required', 'integer'],
         ]);
-
-
     }
 
 
+    /**
+     * получить все сообщения для заявки
+     * @param $id
+     * @return bool|\Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
+     */
     public function getMessage($id)
     {
-        $user = Auth::user();
         $ticket = Ticket::find($id)->checkAccess();
-        if ($ticket){
-            return response(['data'=>$ticket->message], 200 );
+        if ($ticket) {
+            return response(['data' => $ticket->message], 200);
         }
         return false;
+    }
 
+
+    /**
+     * установить пользователя онлайн
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function setOnlineStatusUser()
+    {
+        return response()->json(['auth' => Auth::user()->setOnline(), 'user_id' => \Auth::id()]);
+    }
+
+    /**
+     * установить пользователя оффлайн
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function setOfflineStatusUser()
+    {
+        return response()->json(['auth' => Auth::user()->setOffline(), 'user_id' => \Auth::id()]);
     }
 }

@@ -17,7 +17,7 @@
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
 </head>
 <body>
-    <div>
+    <div id="app">
         <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
             <div class="container">
                 <a class="navbar-brand" href="{{ url('/') }}">
@@ -49,6 +49,9 @@
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ route('chatsList') }}">Чаты</a>
+                                </li>
+                                <li class="nav-item">
+                                    <newmessage-component :user_id="{{ Auth::id() }}"></newmessage-component>
                                 </li>
                         @endauth
                     </ul>

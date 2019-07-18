@@ -11,7 +11,7 @@
                         {{ Auth::user()->isDoctor() ? $chat->patient->name : $chat->doctor->name}}
                         {{ Auth::user()->isDoctor() ? $chat->patient->patronymic : $chat->doctor->patronymic}}
                     </div>
-                    <div id="app">
+                    <div>
                         <chat-component :user="{{ Auth::user() }}" :room="{{ $chat }}"></chat-component>
                     </div>
                 </div>

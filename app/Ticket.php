@@ -29,6 +29,10 @@ class Ticket extends Model
         return $this->hasMany(Message::class, 'ticket_id', 'id');
     }
 
+    /**
+     * проверка на доступ к заявке
+     * @return $this|bool
+     */
     public function checkAccess(){
         $user=Auth::user();
         if($this->patient_id == $user->id or $this->doctor_id  == $user->id){

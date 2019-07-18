@@ -33,10 +33,10 @@
                             <li class="nav-item">
                                 {{ $ticket->created_at }} {{ $ticket->specialty->name }}
                                 @if($ticket->doctor_id == null and $ticket->specialty_id == Auth::user()->specialty_id)
-                                    <a href="">Начать чат</a>
+                                    <a href="{{route('chat', $ticket->id)}}">Начать чат</a>
                                 @endif
                                 @if($ticket->doctor_id == Auth::id())
-                                    <a href="">Продолжить чат</a>
+                                    <a href="{{route('chat', $ticket->id)}}">Продолжить чат</a>
                                 @endif
                             </li>
                         @endforeach

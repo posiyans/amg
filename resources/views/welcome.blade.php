@@ -8,7 +8,7 @@
                     <div class="card-header">AMG</div>
 
                     <div class="card-body">
-                         welcome
+                         Чат реального времени
                     </div>
                 </div>
             </div>

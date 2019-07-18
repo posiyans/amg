@@ -8,6 +8,7 @@ require('./bootstrap');
 
 window.Vue = require('vue');
 window.io = require('socket.io-client');
+window.socket = io(':6001');
 /**
  * The following block of code may be used to automatically register your
  * Vue components. It will recursively scan this directory for the Vue
@@ -20,6 +21,8 @@ window.io = require('socket.io-client');
 // files.keys().map(key => Vue.component(key.split('/').pop().split('.')[0], files(key).default));
 
 Vue.component('chat-component', require('./components/ChatComponent.vue').default);
+Vue.component('newmessage-component', require('./components/NewMessageComponent.vue').default);
+
 
 /**
  * Next, we will create a fresh Vue application instance and attach it to
@@ -33,11 +36,4 @@ const app = new Vue({
         message: 'Hello Vue!'
     }
 });
-
-
-// window.io = require('socket.io-client');
-// var socket = io(':6001'),
-//      channel = 'chat:message';
-
-//alert('sdfsfd');
 

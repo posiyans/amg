@@ -2,17 +2,16 @@
     <div>
         <div class="card anyClass" id="scroll">
             <div class="list-group">
-                <div v-for="item in allMessage"  class="list-group-item list-group-item-action" :class="item.user_id | masterFilter(user)">{{ item.user_id}} {{ item.created_at }} {{ item.text }}</div>
-<!--                <a href="#" class="list-group-item list-group-item-action list-group-item-info">This is a info list-->
-<!--                    group item</a>-->
-<!--                <a href="#" class="list-group-item list-group-item-action list-group-item-light">This is a light list-->
-<!--                    group item</a>-->
+                <div v-for="item in allMessage"  class="list-group-item list-group-item-action" :class="item.user_id | masterFilter(user)">
+                    <b>{{item.user_id | nameFilter(user)}}:</b>
+                    {{ item.text }}
+                    <span class="time-message">{{ item.created_at }}</span></div>
             </div>
         </div>
         <div class="input-group mb-3">
             <input type="text" class="form-control" placeholder="Введите текст" aria-describedby="basic-addon2" v-model="message">
             <div class="input-group-append">
-                <button class="btn btn-primary" @click='sendMesage' @keydown="actionUser" type="button">Отправить</button>
+                <button class="btn btn-primary" @click='sendMesage'  type="button">Отправить</button>
             </div>
         </div>
     </div>
@@ -31,6 +30,13 @@
                 }else{
                     return 'list-group-item-info'
                 }
+            },
+            nameFilter(user_id, user) {
+                if (user_id == user.id){
+                    return 'я'
+                }else{
+                    return 'собеседник'
+                }
             }
         },
         data() {
@@ -42,31 +48,18 @@
             }
         },
         mounted() {
-            console.log(this.user.id);
-            var socket = io(':6001'),
-                channel = "laravel_database_new-message.1:App\\Events\\NewMessage";
             socket.on('connect', function() {
-                console.log('connected');
-                axios.get('/get-message/1').then(response =>{
+                socket.emit("subscribe", "laravel_database_new-message-chat." + this.room.id + ":userMessage");
+                axios.get('/get-message/'+ this.room.id).then(response =>{
                     this.allMessage = response.data.data;
                     let w = document.querySelector(".anyClass");
-                    console.log(response.data.data);
                     $('#scroll').animate({scrollTop:response.data.data.length*50}, 'slow');
                 });
             }.bind(this));
-            socket.on('error', function(error) {
-                console.warn('Error', error);
-            });
-
-            socket.on('*', function(message) {
-                console.info(message);
-            });
-            socket.on("laravel_database_new-message.1:App\\Events\\NewMessage", function (data){
+            socket.on("laravel_database_new-message-chat." + this.room.id + ":userMessage", function (data){
                 this.allMessage.push({ text:  data.text, user_id: data.user_id, created_at: data.created_at})
                 $('#scroll').animate({scrollTop:this.allMessage.length*50}, 'slow');
             }.bind(this))
-            console.log('Component mounted.')
-            //console.log(this.user)
         },
         methods:{
            sendMesage(){
@@ -77,10 +70,6 @@
                    this.message = ''
                }
            },
-            actionUser(){
-
-            }
-
         }
     }
 </script>
@@ -88,5 +77,9 @@
     .anyClass {
         height:500px;
         overflow-y: scroll;
+    }
+
+    .time-message {
+        float: right;
     }
 </style>

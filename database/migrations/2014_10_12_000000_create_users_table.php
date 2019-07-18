@@ -22,6 +22,7 @@ class CreateUsersTable extends Migration
             $table->string('city');
             $table->integer('role');
             $table->integer('specialty_id')->nullable();
+            $table->boolean('online')->default(false);
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

@@ -9,6 +9,8 @@ use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use App\User;
+use Mail;
 
 class NewMessage implements ShouldBroadcast
 {
@@ -18,6 +20,7 @@ class NewMessage implements ShouldBroadcast
     public $ticket_id;
     public $user_id;
     public $created_at;
+    public $collocutor_id;
     /**
      * Create a new event instance.
      *
@@ -29,6 +32,7 @@ class NewMessage implements ShouldBroadcast
         $this->ticket_id = $data->ticket_id;
         $this->text = $data->text;
         $this->created_at = $data->created_at;
+        $this->collocutor_id = $data->collocutor_id;
 
     }
 
@@ -39,7 +43,19 @@ class NewMessage implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return ['new-message.'.$this->ticket_id];
-        //return new PrivateChannel('new-message');
+        $collocutor = User::find($this->collocutor_id);
+        if (!$collocutor->isOnline()) {
+            Mail::raw('Вам пришло сообщение в чате "'.$this->text.'"', function($message) use ($collocutor)
+            {
+                $message->to($collocutor->email)->subject('Новое сообщение');
+            });
+            $this->text.='   (send offline)';
+        }
+        return ['new-message-chat.' . $this->ticket_id, 'new-message-user.' . $this->collocutor_id];
+    }
+
+    public function broadcastAs()
+    {
+        return 'userMessage';
     }
 }

@@ -6,6 +6,7 @@ use App\Ticket;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Auth;
 
 class User extends Authenticatable
 {
@@ -36,6 +37,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'online' => 'boolean'
     ];
 
     public function patient_tickets()
@@ -73,13 +75,22 @@ class User extends Authenticatable
     {
         return $this->hasOne('App\Specialty' , 'id', 'specialty_id');
     }
+
+    /**
+     * возвращает всех врачей
+     * @return mixed
+     */
     public static function getAllDoctor(){
+        Auth::User()->setOnline();
         return User::where('role', 2)->get();
     }
 
+    /**
+     * возврщвет врачей для пациента
+     * @return array
+     */
     public function getDoctorForPatient()
     {
-
         $tickets = $this->hasMany(Ticket::class, 'patient_id', 'id')
             ->whereNotNull('doctor_id')
             ->distinct('doctor_id')
@@ -91,6 +102,10 @@ class User extends Authenticatable
         return $doctors;
     }
 
+    /**
+     * возвращает открытые заявки
+     * @return mixed
+     */
     public function getOpenTicket(){
         if ($this->isPatient()){
             return $this->patient_open_tickets;
@@ -101,6 +116,10 @@ class User extends Authenticatable
     }
 
 
+    /**
+     * возврящает завки в работе
+     * @return mixed
+     */
     public function getInWorkTicket(){
         if ($this->isPatient()){
             return $this->patient_tickets_in_work;
@@ -110,15 +129,27 @@ class User extends Authenticatable
         }
     }
 
-
+    /**
+     * проверка на роль пациента
+     * @return bool
+     */
     public function isPatient(){
         return ($this->role == 1) ? True : False;
     }
 
+    /**
+     * проверка на роль врача
+     * @return bool
+     */
     public function isDoctor(){
         return ($this->role == 2) ? True : False;
     }
 
+    /**
+     * возврящает профиль
+     * @param $id
+     * @return bool
+     */
     public function getProfile($id){
         if ($this->isPatient()) {
             $doctor = Ticket::where('patient_id', $this->id)->where('doctor_id', $id)->first();
@@ -129,4 +160,52 @@ class User extends Authenticatable
         return User::findOrFail($id);
     }
 
+    /**
+     * проверка на онлайн
+     * @param bool $id
+     * @return mixed
+     */
+    public function isOnline($id = false){
+        if ($id){
+            $user = User::find($id);
+        }else{
+            $user = $this;
+        }
+        return $user->online;
+    }
+
+    /**
+     * устновить статус онлайн
+     * @param bool $id
+     * @return mixed
+     */
+    public function setOnline($id = false){
+        return $this->changeStatus($id, true);
+    }
+
+    /**
+     * установить статус офлайн
+     * @param bool $id
+     * @return mixed
+     */
+    public function setOffline($id = false){
+        return $this->changeStatus($id, false);
+    }
+
+    /**
+     * сменить статус
+     * @param $id
+     * @param $status
+     * @return mixed
+     */
+    public function changeStatus($id, $status){
+        if ($id){
+            $user = User::find($id);
+        }else{
+            $user = $this;
+        }
+        $user->online = $status;
+        $user->save();
+        return $user->online;
+    }
 }
