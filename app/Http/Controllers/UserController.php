@@ -142,9 +142,13 @@ class UserController extends Controller
      * проверка на авторизона пользователь или нет
      * @return \Illuminate\Http\JsonResponse
      */
-    public function checkAuth()
+    public function checkAuth(Request $request)
     {
-        return response()->json(['auth' => \Auth::check(), 'user_id' => \Auth::user()->id]);
+        if ($request->has('firstUser')) {
+            User::query()->update(['online'=> 0]);
+        }
+        Auth::user()->setOnline();
+        return response()->json(['auth' => \Auth::check(), 'user_id' => \Auth::user()->id, 'data'=> $request->firstUser]);
     }
 
     /**
@@ -273,3 +277,4 @@ class UserController extends Controller
         return response()->json(['auth' => Auth::user()->setOffline(), 'user_id' => \Auth::id()]);
     }
 }
+
