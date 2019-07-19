@@ -30,7 +30,6 @@ class UserController extends Controller
             return view('patientList', $data);
         }
         return redirect('home');
-
     }
 
     /**
@@ -101,7 +100,6 @@ class UserController extends Controller
         return redirect('home');
     }
 
-
     /**
      * сохрание задачи
      * @param Request $request
@@ -120,7 +118,6 @@ class UserController extends Controller
         }
         return redirect('home');
     }
-
 
     /**
      * вывод списка заявок
@@ -158,18 +155,17 @@ class UserController extends Controller
     public function checkSub($chanell)
     {
         $user = Auth::user();
-        if ($chanell == 'laravel_database_new-message-user.'.$user->id.':userMessage'){
-            return response()->json(['auth' => \Auth::check(), 'c'=>$chanell, 'access'=>True]);
+        if ($chanell == 'laravel_database_new-message-user.' . $user->id . ':userMessage') {
+            return response()->json(['auth' => \Auth::check(), 'c' => $chanell, 'access' => True]);
         }
-        $chanell = str_replace('laravel_database_new-message-chat.','',$chanell);
-        $chanell = str_replace(':userMessage','',$chanell);
+        $chanell = str_replace('laravel_database_new-message-chat.', '', $chanell);
+        $chanell = str_replace(':userMessage', '', $chanell);
         $ticket = Ticket::findOrFail((int)$chanell)->checkAccess();
-        if ($ticket){
+        if ($ticket) {
             $access = true;
         }
-        return response()->json(['auth' => \Auth::check(), 'c'=>$chanell, 'access'=>$access]);
+        return response()->json(['auth' => \Auth::check(), 'c' => $chanell, 'access' => $access]);
     }
-
 
     /**
      * Вывод списка чатов
@@ -193,15 +189,23 @@ class UserController extends Controller
     {
         $data = [];
         $user = Auth::user();
-        $chat = Ticket::findOrFail($id);
-        if ($chat->doctor_id == null) {
-            $chat->doctor_id = $user->id;
-            $chat->save();
+        $chat = Ticket::find($id);
+        if ($chat) {
+            if ($chat->doctor_id == null) {
+                if ($user->isDoctor()) {
+                    $chat->doctor_id = $user->id;
+                    $chat->save();
+                } else {
+                    return redirect('home');
+                }
+            }
+            if ($chat->checkAccess()) {
+                $data['chat'] = $chat;
+                return view('chat', $data);
+            }
         }
-        $data['chat'] = $chat;
-        return view('chat', $data);
+        return redirect('home');
     }
-
 
     /**
      * получение сообщение и рассылка его
@@ -211,15 +215,17 @@ class UserController extends Controller
     {
         $user = Auth::user();
         $this->validatorMessage($request->all())->validate();
-        $message = Message::create([
-            'text' => $request->input('message'),
-            'user_id' => $user->id,
-            'ticket_id' => $request->input('room_id')
-        ]);
-        $message->collocutor();
-        event(new \App\Events\NewMessage($message));
+        $ticket = Ticket::find((int)$request->input('room_id'))->checkAccess();
+        if ($ticket){
+            $message = Message::create([
+                'text' => $request->input('message'),
+                'user_id' => $user->id,
+                'ticket_id' => $request->input('room_id')
+            ]);
+            $message->collocutor();
+            event(new \App\Events\NewMessage($message));
+        }
     }
-
 
     /**
      * @param array $data

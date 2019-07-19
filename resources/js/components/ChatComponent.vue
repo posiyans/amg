@@ -2,13 +2,17 @@
     <div>
         <div class="card anyClass" id="scroll">
             <div class="list-group">
-                <div v-for="item in allMessage"  class="list-group-item list-group-item-action" :class="item.user_id | masterFilter(user)">
+                <div v-if='getMessage' v-for="item in allMessage"  class="list-group-item list-group-item-action" :class="item.user_id | masterFilter(user)">
                     <b>{{item.user_id | nameFilter(user)}}:</b>
                     {{ item.text }}
-                    <span class="time-message">{{ item.created_at }}</span></div>
+                    <span class="time-message">{{ item.created_at }}</span>
+                </div>
+                <div v-else>
+                    идет подключение к серверу....
+                </div>
             </div>
         </div>
-        <div class="input-group mb-3">
+        <div v-if='getMessage' class="input-group mb-3">
             <input type="text" class="form-control" placeholder="Введите текст" aria-describedby="basic-addon2" v-model="message">
             <div class="input-group-append">
                 <button class="btn btn-primary" @click='sendMesage'  type="button">Отправить</button>
@@ -42,6 +46,7 @@
         data() {
             return {
                 message: '',
+                getMessage: false,
                 allMessage: [{}
 
                 ]
@@ -54,6 +59,7 @@
                     this.allMessage = response.data.data;
                     let w = document.querySelector(".anyClass");
                     $('#scroll').animate({scrollTop:response.data.data.length*50}, 'slow');
+                    this.getMessage = true;
                 });
             }.bind(this));
             socket.on("laravel_database_new-message-chat." + this.room.id + ":userMessage", function (data){

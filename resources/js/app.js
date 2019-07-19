@@ -37,3 +37,12 @@ const app = new Vue({
     }
 });
 
+
+$('#role').on('load change', function(e){
+    console.log(this.value);
+    if (this.value == 2){
+        $('#specialty').show(500);
+    }else{
+        $('#specialty').hide(500);
+    }
+});
