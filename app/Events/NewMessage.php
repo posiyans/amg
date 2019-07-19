@@ -21,6 +21,7 @@ class NewMessage implements ShouldBroadcast
     public $user_id;
     public $created_at;
     public $collocutor_id;
+
     /**
      * Create a new event instance.
      *

@@ -8,13 +8,14 @@ var request = require('request'),
 var users = {};
 var firstUser = true;
 
+// проверяем авторизованный поьзватель или нет
+// проверяем первый пользователь, если да то всех оффлайн
 io.use(function (socket, next) {
     let option = {}
     if (firstUser){
         option = {
             firstUser: true,
         };
-        firstUser = false;
     }
     request.get({
         url: 'http://' + url + '/ws/check-auth',
@@ -24,12 +25,22 @@ io.use(function (socket, next) {
     }, function (error, response, json) {
         socket.user_id = json.user_id
         users[socket.user_id] = socket.id;
+        if (json.auth){
+            firstUser = false;
+        }
         return json.auth ? next() : next(new Error('Auth error'));
     });
 
 });
 
 io.on('connection', function (socket) {
+    socket.on('actionUser', function (channel) {
+        //console.log('actionUser ' + channel)
+        io
+            .to(channel + ':actionUser')
+            .emit(channel + ':actionUser', socket.user_id);
+    });
+    // проверка доступа к  каналу
     socket.on('subscribe', function (channel) {
         request.get({
             url: 'http://' + url + '/ws/check-sub/' + channel,
@@ -38,12 +49,13 @@ io.on('connection', function (socket) {
         }, function (error, response, json) {
             if (json.access) {
                 socket.join(channel);
+                socket.join(channel + ':actionUser');
             } else {
                 return;
             }
         });
     });
-
+    // устанавливаем статус офлайн при отключении
     socket.once('disconnect', function () {
         delete users[socket.user_id];
         request.get({

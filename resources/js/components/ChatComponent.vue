@@ -2,7 +2,8 @@
     <div>
         <div class="card anyClass" id="scroll">
             <div class="list-group">
-                <div v-if='getMessage' v-for="item in allMessage"  class="list-group-item list-group-item-action" :class="item.user_id | masterFilter(user)">
+                <div v-if='getMessage' v-for="item in allMessage" class="list-group-item list-group-item-action"
+                     :class="item.user_id | masterFilter(user)">
                     <b>{{item.user_id | nameFilter(user)}}:</b>
                     {{ item.text }}
                     <span class="time-message">{{ item.created_at }}</span>
@@ -13,11 +14,13 @@
             </div>
         </div>
         <div v-if='getMessage' class="input-group mb-3">
-            <input type="text" class="form-control" placeholder="Введите текст" aria-describedby="basic-addon2" v-model="message">
+            <input type="text" class="form-control" placeholder="Введите текст" aria-describedby="basic-addon2"
+                   v-model="message" @keydown="actionUser">
             <div class="input-group-append">
-                <button class="btn btn-primary" @click='sendMesage'  type="button">Отправить</button>
+                <button class="btn btn-primary" @click='sendMesage' type="button">Отправить</button>
             </div>
         </div>
+        <div class="small" v-if="isActive"> Собеседник набирает текст....</div>
     </div>
 </template>
 
@@ -29,16 +32,16 @@
         ],
         filters: {
             masterFilter(user_id, user) {
-                if (user_id == user.id){
+                if (user_id == user.id) {
                     return 'list-group-item-light'
-                }else{
+                } else {
                     return 'list-group-item-info'
                 }
             },
             nameFilter(user_id, user) {
-                if (user_id == user.id){
+                if (user_id == user.id) {
                     return 'я'
-                }else{
+                } else {
                     return 'собеседник'
                 }
             }
@@ -48,40 +51,57 @@
                 message: '',
                 getMessage: false,
                 allMessage: [{}
-
-                ]
+                ],
+                sending: 0,
+                isActive: false,
+                typingTimer: false
             }
         },
         mounted() {
-            socket.on('connect', function() {
+            socket.on('connect', function () {
                 socket.emit("subscribe", "laravel_database_new-message-chat." + this.room.id + ":userMessage");
-                axios.get('/get-message/'+ this.room.id).then(response =>{
+                axios.get('/get-message/' + this.room.id).then(response => {
                     this.allMessage = response.data.data;
                     let w = document.querySelector(".anyClass");
-                    $('#scroll').animate({scrollTop:response.data.data.length*50}, 'slow');
+                    $('#scroll').animate({scrollTop: response.data.data.length * 50}, 'slow');
                     this.getMessage = true;
                 });
             }.bind(this));
-            socket.on("laravel_database_new-message-chat." + this.room.id + ":userMessage", function (data){
-                this.allMessage.push({ text:  data.text, user_id: data.user_id, created_at: data.created_at})
-                $('#scroll').animate({scrollTop:this.allMessage.length*50}, 'slow');
+            socket.on("laravel_database_new-message-chat." + this.room.id + ":userMessage", function (data) {
+                this.allMessage.push({text: data.text, user_id: data.user_id, created_at: data.created_at})
+                $('#scroll').animate({scrollTop: this.allMessage.length * 50}, 'slow');
+                this.isActive = false;
+            }.bind(this))
+            socket.on("laravel_database_new-message-chat." + this.room.id + ":userMessage:actionUser", function (data) {
+                if (data != this.user.id) {
+                    this.isActive = true;
+                    if(this.typingTimer) clearTimeout(this.typingTimer);
+                    this.typingTimer = setTimeout(()=>{
+                        this.isActive = false;
+                    },2000);
+                    console.log(data)
+                    this.sending++;
+                }
             }.bind(this))
         },
-        methods:{
-           sendMesage(){
-               if (this.message != '') {
-                   axios.post('/send-message', {message: this.message, room_id: this.room.id}).then((response)=>{
-                       //console.log(response)
-                   });
-                   this.message = ''
-               }
-           },
+        methods: {
+            sendMesage() {
+                if (this.message != '') {
+                    axios.post('/send-message', {message: this.message, room_id: this.room.id}).then((response) => {
+                        //console.log(response)
+                    });
+                    this.message = ''
+                }
+            },
+            actionUser() {
+                socket.emit("actionUser", "laravel_database_new-message-chat." + this.room.id + ":userMessage", this.message);
+            }
         }
     }
 </script>
 <style>
     .anyClass {
-        height:500px;
+        height: 500px;
         overflow-y: scroll;
     }
 
