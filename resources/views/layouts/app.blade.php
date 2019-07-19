@@ -23,6 +23,9 @@
                 <a class="navbar-brand" href="{{ url('/') }}">
                     AMG
                 </a>
+                @auth
+                     <newmessage-component :user_id="{{ Auth::id() }}"></newmessage-component>
+                @endauth
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
                     <span class="navbar-toggler-icon"></span>
                 </button>
@@ -49,9 +52,6 @@
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ route('chatsList') }}">Чаты</a>
-                                </li>
-                                <li class="nav-item">
-                                    <newmessage-component :user_id="{{ Auth::id() }}"></newmessage-component>
                                 </li>
                         @endauth
                     </ul>
