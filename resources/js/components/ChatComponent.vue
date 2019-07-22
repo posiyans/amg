@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div class="card anyClass" id="scroll">
+        <div class="card anyClass" ref="block">
             <div class="list-group">
                 <div v-if='getMessage' v-for="item in allMessage" class="list-group-item list-group-item-action"
                      :class="item.user_id | masterFilter(user)">
@@ -63,13 +63,11 @@
                 axios.get('/get-message/' + this.room.id).then(response => {
                     this.allMessage = response.data.data;
                     let w = document.querySelector(".anyClass");
-                    $('#scroll').animate({scrollTop: response.data.data.length * 50}, 'slow');
                     this.getMessage = true;
                 });
             }.bind(this));
             socket.on("laravel_database_new-message-chat." + this.room.id + ":userMessage", function (data) {
                 this.allMessage.push({text: data.text, user_id: data.user_id, created_at: data.created_at})
-                $('#scroll').animate({scrollTop: this.allMessage.length * 50}, 'slow');
                 this.isActive = false;
             }.bind(this))
             socket.on("laravel_database_new-message-chat." + this.room.id + ":userMessage:actionUser", function (data) {
@@ -95,6 +93,13 @@
             },
             actionUser() {
                 socket.emit("actionUser", "laravel_database_new-message-chat." + this.room.id + ":userMessage", this.message);
+            }
+        },
+        watch:{
+            allMessage(){
+                setTimeout(() => {
+                    this.$refs.block.scrollTop = this.$refs.block.scrollHeight;
+                });
             }
         }
     }
