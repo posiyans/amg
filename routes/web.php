@@ -22,6 +22,7 @@ Route::get('/home', 'HomeController@index')->name('home');
 Route::group(['middleware' => 'auth'], function () {
     Route::post('/send-message', 'UserController@sendMessage')->name('sendMessage');
     Route::get('/get-message/{id}', 'UserController@getMessage')->name('getMessage');
+    Route::get('/get-user-list', 'UserController@getUserList')->name('getUserLost');
     Route::get('/patient-list', 'UserController@patientList')->name('patientList');
     Route::get('/doctor-list', 'UserController@doctorList')->name('doctorList');
     Route::get('/patient-profile/{id}', 'UserController@patientProfile')->name('patientProfile');
@@ -31,7 +32,7 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/ticket-create', 'UserController@createTicket')->name('createTicket');
     Route::post('/ticket-save', 'UserController@saveTicket')->name('saveTicket');
     Route::get('/chats-list', 'UserController@chatsList')->name('chatsList');
-    Route::get('/chat/{id}', 'UserController@chat')->name('chat');
+    Route::get('/chat/{id?}', 'UserController@chat')->name('chat');
 
     Route::get('/ws/check-auth', 'UserController@checkAuth');
     Route::get('/ws/status-online', 'UserController@setOnlineStatusUser');

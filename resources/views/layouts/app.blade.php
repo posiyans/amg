@@ -51,7 +51,7 @@
                                     <a class="nav-link" href="{{ route('ticketList') }}">Заявки</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('chatsList') }}">Чаты</a>
+                                    <a class="nav-link" href="{{ route('chat') }}">Чаты</a>
                                 </li>
                         @endauth
                     </ul>

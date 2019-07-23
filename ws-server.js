@@ -34,11 +34,13 @@ io.use(function (socket, next) {
 });
 
 io.on('connection', function (socket) {
-    socket.on('actionUser', function (channel) {
+    io
+        .emit('userList', users);
+    socket.on('actionUser', function (channel, data) {
         //console.log('actionUser ' + channel)
         io
             .to(channel + ':actionUser')
-            .emit(channel + ':actionUser', socket.user_id);
+            .emit(channel + ':actionUser', {user_id : socket.user_id, chat_id:data});
     });
     // проверка доступа к  каналу
     socket.on('subscribe', function (channel) {
@@ -58,6 +60,8 @@ io.on('connection', function (socket) {
     // устанавливаем статус офлайн при отключении
     socket.once('disconnect', function () {
         delete users[socket.user_id];
+        io
+            .emit('userList', users);
         request.get({
             url: 'http://' + url + '/ws/status-offline/',
             headers: {cookie: socket.request.headers.cookie},

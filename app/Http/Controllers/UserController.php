@@ -189,26 +189,29 @@ class UserController extends Controller
      * @param $id
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function chat($id)
+    public function chat($id=false)
     {
         $data = [];
         $user = Auth::user();
-        $chat = Ticket::find($id);
-        if ($chat) {
-            if ($chat->doctor_id == null) {
-                if ($user->isDoctor()) {
-                    $chat->doctor_id = $user->id;
-                    $chat->save();
-                } else {
-                    return redirect('home');
+
+        if ($id){
+            $chat = Ticket::find($id);
+            if ($chat) {
+                if ($chat->doctor_id == null) {
+                    if ($user->isDoctor()) {
+                        $chat->doctor_id = $user->id;
+                        $chat->save();
+                    } else {
+                        return redirect('home');
+                    }
                 }
-            }
-            if ($chat->checkAccess()) {
-                $data['chat'] = $chat;
-                return view('chat', $data);
-            }
+                if ($chat->checkAccess()) {
+                    $data['chat'] = $chat;
+                    return view('chat', $data);
+                }
         }
-        return redirect('home');
+        }
+        return view('chat');
     }
 
     /**
@@ -275,6 +278,23 @@ class UserController extends Controller
     public function setOfflineStatusUser()
     {
         return response()->json(['auth' => Auth::user()->setOffline(), 'user_id' => \Auth::id()]);
+    }
+
+    public function getUserList()
+    {
+        $user = Auth::user();
+        $chatsList = $user->getInWorkTicket();
+        if ($user->isPatient()) {
+            foreach ($chatsList as $chat) {
+                $chat->collocutor = $chat->doctor;
+            }
+        }
+        if ($user->isDoctor()) {
+            foreach ($chatsList as $chat) {
+                $chat->collocutor = $chat->patient;
+            }
+        }
+        return response()->json(['userList' => $chatsList]);
     }
 }
 
