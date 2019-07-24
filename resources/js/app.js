@@ -30,7 +30,7 @@ console.log(Vue.moment())
 // files.keys().map(key => Vue.component(key.split('/').pop().split('.')[0], files(key).default));
 
 Vue.component('chat-component', require('./components/ChatComponent.vue').default);
-Vue.component('newmessage-component', require('./components/NewMessageComponent.vue').default);
+// Vue.component('newmessage-component', require('./components/NewMessageComponent.vue').default);
 
 
 /**

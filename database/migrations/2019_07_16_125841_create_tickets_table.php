@@ -18,6 +18,8 @@ class CreateTicketsTable extends Migration
             $table->integer('patient_id');
             $table->integer('specialty_id');
             $table->integer('doctor_id')->nullable();
+            $table->integer('patient_count_message')->nullable();
+            $table->integer('doctor_count_message')->nullable();
             $table->string('rom_token');
             $table->timestamps();
         });

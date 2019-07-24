@@ -40,6 +40,20 @@ class Ticket extends Model
         }
         return false;
     }
+
+    public function setReadAllMessage()
+    {
+        $count = count($this->message);
+        $user= Auth::user();
+        if($user->isPatient()){
+            $this->patient_count_message = $count;
+        }
+        if($user->isDoctor()){
+            $this->doctor_count_message = $count;
+        }
+        $this->save();
+        return $count;
+    }
 }
 
 

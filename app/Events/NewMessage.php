@@ -21,6 +21,8 @@ class NewMessage implements ShouldBroadcast
     public $user_id;
     public $created_at;
     public $collocutor_id;
+    public $id;
+    public $count;
 
     /**
      * Create a new event instance.
@@ -32,8 +34,11 @@ class NewMessage implements ShouldBroadcast
         $this->user_id = $data->user_id;
         $this->ticket_id = $data->ticket_id;
         $this->text = $data->text;
+        $this->id = $data->id;
         $this->created_at = $data->created_at;
         $this->collocutor_id = $data->collocutor_id;
+        $this->count = $data->allCount;
+
 
     }
 

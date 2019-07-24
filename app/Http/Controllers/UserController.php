@@ -223,12 +223,14 @@ class UserController extends Controller
         $user = Auth::user();
         $this->validatorMessage($request->all())->validate();
         $ticket = Ticket::find((int)$request->input('room_id'))->checkAccess();
+        $ticket->setReadAllMessage();
         if ($ticket){
             $message = Message::create([
                 'text' => $request->input('message'),
                 'user_id' => $user->id,
                 'ticket_id' => $request->input('room_id')
             ]);
+            $message->allCount = $ticket->setReadAllMessage();
             $message->collocutor();
             event(new \App\Events\NewMessage($message));
         }
@@ -255,6 +257,7 @@ class UserController extends Controller
     public function getMessage($id)
     {
         $ticket = Ticket::find($id)->checkAccess();
+        $ticket->setReadAllMessage();
         if ($ticket) {
             return response(['data' => $ticket->message], 200);
         }
@@ -287,11 +290,13 @@ class UserController extends Controller
         if ($user->isPatient()) {
             foreach ($chatsList as $chat) {
                 $chat->collocutor = $chat->doctor;
+                $chat->noReadMessage = count($chat->message) - $chat->patient_count_message;
             }
         }
         if ($user->isDoctor()) {
             foreach ($chatsList as $chat) {
                 $chat->collocutor = $chat->patient;
+                $chat->noReadMessage = count($chat->message) - $chat->doctor_count_message;
             }
         }
         return response()->json(['userList' => $chatsList]);
