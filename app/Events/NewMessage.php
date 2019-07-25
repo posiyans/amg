@@ -51,10 +51,10 @@ class NewMessage implements ShouldBroadcast
     {
         $collocutor = User::find($this->collocutor_id);
         if (!$collocutor->isOnline()) {
-            Mail::raw('Вам пришло сообщение в чате "'.$this->text.'"', function($message) use ($collocutor)
-            {
-                $message->to($collocutor->email)->subject('Новое сообщение');
-            });
+//            Mail::raw('Вам пришло сообщение в чате "'.$this->text.'"', function($message) use ($collocutor)
+//            {
+//                $message->to($collocutor->email)->subject('Новое сообщение');
+//            });
             $this->text.='   (send offline)';
         }
         return ['new-message-chat.' . $this->ticket_id, 'new-message-user.' . $this->collocutor_id];

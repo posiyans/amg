@@ -223,7 +223,7 @@ class UserController extends Controller
         $user = Auth::user();
         $this->validatorMessage($request->all())->validate();
         $ticket = Ticket::find((int)$request->input('room_id'))->checkAccess();
-        $ticket->setReadAllMessage();
+        //$ticket->setReadAllMessage();
         if ($ticket){
             $message = Message::create([
                 'text' => $request->input('message'),

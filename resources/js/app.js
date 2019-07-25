@@ -16,8 +16,6 @@ Vue.use(require('vue-moment'), {
     moment
 });
 window.socket = io(':6001');
-console.log(Vue.moment())
-//console.log(moment().tz(String));
 /**
  * The following block of code may be used to automatically register your
  * Vue components. It will recursively scan this directory for the Vue

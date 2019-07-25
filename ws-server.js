@@ -44,6 +44,7 @@ io.on('connection', function (socket) {
     });
     // проверка доступа к  каналу
     socket.on('subscribe', function (channel) {
+        //console.log(io)
         request.get({
             url: 'http://' + url + '/ws/check-sub/' + channel,
             headers: {cookie: socket.request.headers.cookie},
@@ -67,7 +68,7 @@ io.on('connection', function (socket) {
             headers: {cookie: socket.request.headers.cookie},
             json: true
         });
-        console.log(users);
+        //console.log(users);
     })
 });
 
@@ -83,8 +84,3 @@ redis.on('pmessage', function (pattern, channel, message) {
         .emit(channel + ':' + message.event, message.data);
 });
 
-// process.on('SIGINT', () => {
-//     console.log("Intercepting SIGINT");
-//
-//     process.exit('SIGINT');
-// });

@@ -36,7 +36,7 @@
                 socket.emit("subscribe", "laravel_database_new-message-user." + this.user_id + ":userMessage");
                 socket.on("laravel_database_new-message-user." + this.user_id + ":userMessage", function (data) {
                     //this.userNoReadMessage[data.ticket_id] ++;
-                    console.log(data.ticket_id);
+                    //console.log(data.ticket_id);
                     // if (!this.url_chat || this.id_chat != data.ticket_id){
                     //     this.showMessage = true;
                     //     setTimeout(() => {

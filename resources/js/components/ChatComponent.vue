@@ -10,7 +10,7 @@
                             </div>
                             <div class="srch_bar">
                                 <div class="stylish-input-group">
-                                    <input type="text" class="search-bar" placeholder="Поиск">
+                                    <input type="text" v-model="query" class="search-bar" placeholder="Поиск">
                                     <span class="input-group-addon">
                                      <button type="button"> <i class="fa fa-search" aria-hidden="true"></i> </button>
                                 </span>
@@ -21,9 +21,9 @@
                                      :class="chat.id | chatActiveFilter(chatActive)">
                                     <div class="chat_people">
                                         <div class="chat_img"><img
-                                                src="https://ptetutorials.com/images/user-profile.png"
+                                                src="/img/avatar.png"
                                                 alt="sunil">
-                                            <span v-if="userNoReadMessage[chat.id] > 0" class="chat_no_read">
+                                            <span v-if="userNoReadMessage[chat.id] != 0" class="chat_no_read">
                                                     {{ userNoReadMessage[chat.id] }}
                                                 </span>
                                         </div>
@@ -48,10 +48,10 @@
                     <div class="mesgs" @mousemove="move">
                         <div class="msg_history" ref="block">
                             <transition-group name="list" tag="div">
-                                <div v-if="allMessage" v-for="message in allMessage" v-bind:key="message.id"
+                                <div v-if="allMessage" v-for="message in allMessageComputed" v-bind:key="message.id"
                                      :class="message.user_id |  masterFilter(user)">
                                     <div v-if="message.user_id != user.id" class="incoming_msg_img"><img
-                                            src="https://ptetutorials.com/images/user-profile.png"
+                                            src="/img/avatar.png"
                                             alt="sunil"></div>
                                     <div :class="message.user_id |  masterMsgFilter(user)">
                                         <div :class="message.user_id |  masterResFilter(user)">
@@ -66,6 +66,7 @@
                             <div class="input_msg_write">
                                 <input type="text" class="write_msg" placeholder="Введите сообщение"
                                        v-on:keydown="actionUser"
+                                       v-on:keyup.enter="sendMesage()"
                                        v-model="message">
                                 <button class="msg_send_btn" @click="sendMesage()" type="button"><i
                                         class="fa fa-paper-plane-o"
@@ -134,6 +135,7 @@
                 message: '',
                 getMessage: false,
                 allMessage: [],
+                query: '',
                 isActive: {},
                 typingTimer: false,
                 readChatTimer: false,
@@ -154,36 +156,25 @@
                     this.onlineUser[user] = 'online';
                 }
                 this.setUserStatus();
-                //this.getUserList();
             }.bind(this));
+            socket.emit("subscribe", "laravel_database_new-message-user." + this.user.id + ":userMessage");
             socket.on("laravel_database_new-message-user." + this.user.id + ":userMessage", function (data) {
-                //console.log(data.ticket_id + '___' +data.count);
-                //this.userNoReadMessage[data.ticket_id] ++;
-                //console.log('countReadMessage ' + this.userNoReadMessage);
-                //this.userNoReadMessage
-                this.userNoReadMessage[data.ticket_id] ++
-                //this.userNoReadMessage = Object.assign({}, (this.userNoReadMessage, {[data.ticket_id]: this.userNoReadMessage[data.ticket_id] ++}));
-                // if (!this.url_chat || this.id_chat != data.ticket_id){
-                //     this.showMessage = true;
-                //     setTimeout(() => {
-                //         this.showMessage = false;
-                //     }, 5000);
-                // }
-
+                if (this.chatActive !== data.ticket_id) {
+                    this.userNoReadMessage[data.ticket_id]++;
+                }
             }.bind(this));
             this.getUserList();
         },
         methods: {
             move() {
-                if (this.chatActive && (this.countReadMessage < this.allMessage.length)) {
+                if (this.chatActive && (this.userNoReadMessage[this.chatActive] < this.allMessage.length)) {
                     if (!this.readChatTimer) {
                         this.readChatTimer = setTimeout(() => {
-                            //console.log('есть непрочитанное');
-                            //console.log(this.allMessage.length - this.countReadMessage);
-                            this.countReadMessage = this.allMessage.length;
+                            //this.countReadMessage = this.allMessage.length;
                             this.readChatTimer = false;
                             this.setActiveChat(this.chatActive);
-                        }, 5000);
+                            this.userNoReadMessage[this.chatActive] = 0;
+                        }, 2000);
                     }
 
                 }
@@ -193,6 +184,7 @@
                     this.chats = response.data.userList;
                     this.setUserStatus();
                     this.setOnUserActive();
+                    this.setNoReadMessage();
                 });
             },
             sendMesage() {
@@ -204,7 +196,6 @@
                 }
             },
             actionUser() {
-                //console.log(this.message);
                 socket.emit("actionUser", "laravel_database_new-message-chat." + this.chatActive + ":userMessage", this.chatActive);
             },
             setOnUserActive() {
@@ -227,24 +218,21 @@
                     this.allMessage = response.data.data;
                     this.getMessage = true;
                     this.countReadMessage = response.data.data.length;
-                    this.userNoReadMessage[chat_id] = 0;
                 });
-                socket.emit("subscribe", "laravel_database_new-message-chat." + this.chatActive + ":userMessage");
-                socket.on("laravel_database_new-message-chat." + this.chatActive + ":userMessage", function (data) {
-                    // this.allMessage = Object.assign({}, (this.allMessage, data));
-                    //this.allMessage.push({id: data.id, text: data.text, user_id: data.user_id, created_at: data.created_at})
-                    this.allMessage.push(data);
-                    this.countReadMessage = this.allMessage.length;
-                    //console.log(this.allMessage);
-                    this.isActive = false;
-                }.bind(this))
+                if (!socket._callbacks["$laravel_database_new-message-chat." + this.chatActive + ":userMessage"]) {
+                    socket.emit("subscribe", "laravel_database_new-message-chat." + this.chatActive + ":userMessage");
+                    socket.on("laravel_database_new-message-chat." + this.chatActive + ":userMessage", function (data) {
+                        if (this.chatActive == data.ticket_id) {
+                            this.allMessage.push(data);
+                            //this.countReadMessage = this.allMessage.length;
+                            this.isActive = false;
+                        }
+                    }.bind(this));
+                }
             },
             setUserStatus() {
                 let status = {};
-                let read = {};
                 for (let chat in this.chats) {
-                    read[this.chats[chat].id] = this.chats[chat].noReadMessage;
-                   // console.log('chat_id: ' + this.chats[chat].collocutor.id);
                     if (this.userStatus[this.chats[chat].collocutor.id] != "online") {
                         status[this.chats[chat].collocutor.id] = this.$moment(this.chats[chat].collocutor.updated_at).fromNow();
                     } else {
@@ -255,24 +243,25 @@
                     status[user] = "online";
                 }
                 this.userStatus = status;
+            },
+            setNoReadMessage() {
+                let read = {};
+                for (let chat in this.chats) {
+                    read[this.chats[chat].id] = this.chats[chat].noReadMessage;
+                }
                 this.userNoReadMessage = read;
             }
         },
         computed: {
-            userStatgus: function () {
-                let status = [];
-                for (let chat in this.chats) {
-                    //console.log('chat_id: ' + this.chats[chat].collocutor.id);
-                    status[this.chats[chat].collocutor.id] = this.$moment(this.chats[chat].collocutor.updated_at).fromNow();
-                }
-                for (let user in this.onlineUser) {
-                    status[user] = 'online';
-                }
-                return status;
-            },
+            allMessageComputed: function () {
+                var vm = this
+                return this.allMessage.filter(function (item) {
+                    return item.text.toLowerCase().indexOf(vm.query.toLowerCase()) !== -1;
+                });
+            }
         },
         watch: {
-            allMessage() {
+            allMessageComputed() {
                 setTimeout(() => {
                     this.$refs.block.scrollTop = this.$refs.block.scrollHeight;
                 }, 100);
@@ -282,7 +271,7 @@
 </script>
 <style>
     .list-enter-active, .list-leave-active {
-        transition: all 2s;
+        transition: all 1s;
     }
 
     .list-enter, .list-leave-to /* .list-leave-active до версии 2.1.8 */
@@ -293,14 +282,8 @@
 
 
     .chat_no_read {
-        /*float: right;*/
         background: red;
-        /*color: black;*/
-        /*width: 25px;*/
-        /*height: 25px;*/
-        /*text-align: center;*/
         border-radius: 2px;
-
         position: absolute;
         top: 0px;
         right: 0px;
@@ -524,5 +507,6 @@
     .msg_history {
         height: 516px;
         overflow-y: auto;
+        overflow-x: hidden;
     }
 </style>
